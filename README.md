@@ -1,13 +1,26 @@
 # Linux-Embedded
 [1. Build Image](#1-Build-Image)
-
+[2. Shocket](#-Shocket)
 [7. Kernel Module](#7-Kernel-Module)
+
 # 1. Build Image
 ## Tools chain
   Tools chain gồm các thư viện gcc, GDB, ... thư viện glibc
 
 ## uboot
-  Uboot là chương trình vđk, chạy trước hệ điều hành
+  - Uboot là chương trình vđk, chạy trước hệ điều hành, làm nhiệu vụ load hệ điều hành.
+  - Uboot phổ biến với kiến trúc ARM(Embedded thường chạy arm). Uboot được phát triển bởi Cty denx. Các hãng thì sẽ có các bản Patch chứa phần support cho riêng phân cứng của mình.
+  - Đối với x86 là kiến trức Grub.
+  - Quá trình build uboot image gcc sẽ dùng file cấu hình .config (Makefile sẽ quyết định). File .config thì được generate từ am335x_evm_defconfig.
+  - Nếu muốn enable thêm 1 option nào đấy ngoài Default: make menuconfig -> enable option cần.
+  - Sau quá trình biên dịch sẽ có file u-boot-dbt.img => đây chính là file uboot cần nạp vào sdcard.
+
+## Build Kernel
+```./build_kernel.sh```
+Dùng để build kernel nhưng lúc chạy dòng lệnh này sẽ vừa build vừa tải về
+
+# 5. Build Image
+
 
 
 # 7. Kernel Module
@@ -31,11 +44,3 @@ Cùng là lập trình cho 1 chân GPIO có 2 cách
   => Platform Driver
 - Cách 2 là dùng qua API của kernel
   => Device Driver (Khi dùng Device Driver thì bản chất là gọi Platform Driver)
-
-
- 
-
-
-
-
-
