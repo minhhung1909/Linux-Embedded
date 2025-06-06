@@ -1,7 +1,7 @@
 # Linux-Embedded
 [1. Build Image](#1-BUILD-IMAGE)
 
-[2. Shocket](#-SHOCKET)
+[5. Shared Memory](#5.-SHARED-MEMORY)
 
 [7. Kernel Module](#7-KERNEL-MODULE)
 
@@ -21,7 +21,29 @@
 ```./build_kernel.sh```
 Dùng để build kernel nhưng lúc chạy dòng lệnh này sẽ vừa build vừa tải về
 
-# 5. SHOCKET
+# 5. SHARED MEMORY
+## Vitrual Memory
+- Trong một hệ điều hành hiện đại như Linux, nhiều chương trình (process) có thể chạy song song. Để đảm bảo mỗi tiến trình hoạt động một cách độc lập và an toàn, hệ điều hành sử dụng bộ nhớ ảo (virtual memory).
+
+- Bộ nhớ ảo cho phép mỗi tiến trình "nhìn thấy" một không gian địa chỉ riêng biệt (virtual address space), ngay cả khi tất cả tiến trình thực sự dùng chung RAM vật lý (physical memory).
+
+- Khi một tiến trình truy cập đến một địa chỉ ảo, hệ điều hành và phần cứng (MMU – Memory Management Unit) sẽ chuyển đổi địa chỉ ảo thành địa chỉ vật lý thông qua bảng trang (page table).
+
+Cơ chế này giúp:
+
+- Cô lập bộ nhớ giữa các tiến trình → tránh tình trạng tiến trình này ghi đè vùng nhớ của tiến trình khác.
+
+- Chia sẻ tài nguyên hiệu quả thông qua các kỹ thuật như Copy-on-Write hoặc Shared Memory.
+
+- Hỗ trợ swap (trang bộ nhớ có thể bị lưu tạm ra đĩa để giải phóng RAM).
+
+## Shared Memory trong IPC (Inter-Process Communication)
+Là một phương pháp để hai hoặc nhiều tiến trình có thể truy cập chung một vùng nhớ vật lý – giúp trao đổi dữ liệu nhanh chóng mà không cần gọi hàm kernel nhiều lần như pipe hay socket.
+
+Các bước:
+- Bước 1: Tạo file định danh
+
+```int fd = shm_open (name, O_CREAT | O_RDWR, 0666)```
 
 
 
