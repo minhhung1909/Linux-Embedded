@@ -1,9 +1,11 @@
 # Linux-Embedded
-[1. Build Image](#1-BUILD-IMAGE)
+[1. Build Image](#1.-BUILD-IMAGE)
 
 [5. Shared Memory](#5.-SHARED-MEMORY)
 
-[7. Kernel Module](#7-KERNEL-MODULE)
+[7. Kernel Module](#7.-KERNEL-MODULE)
+
+[12. Character Driver](#12.-CHARACTER-DEVICE-DRIVER)
 
 # 1. BUILD IMAGE
 ## Tools chain
@@ -75,3 +77,74 @@ Cùng là lập trình cho 1 chân GPIO có 2 cách
 - Cách 2 là dùng qua API của kernel.
 
     => Device Driver (Khi dùng Device Driver thì bản chất là gọi Platform Driver)
+
+
+# 12. CHARACTER DEVICE DRIVER
+- Trong driver của các phần cứng linux thì phải tuân thủ theo đúng format quy định của HĐH.
+
+Vì có quá nhiều device với nhiều đặc điểm khác nhau nên để quán lý được thì cần có cây phân cấp.
+
+Cây phân cấp của OS chia ra có 3 loại ngoại vi chính:
+- Character: Dữ liệu truyền là những loại ngoại vi truyền về tuần tự từng byte một (I2C, Keybroad, ...)
+- Block: Dữ liệu truyền là từng block như 512 byte (Màn hình)
+- Network: Dữ liệu truyền là từ ngoài hệ thống (4G, Wifi,...)
+
+## Device file (Special file)
+Mỗi character driver được ánh xạ thành một device file trong /dev/, ví dụ: /dev/mydevice
+
+Device file là cổng giao tiếp giữa user-space và kernel-space.
+
+## THÀNH PHẦN CỦA CHARACTER DRIVER
+### 1. major number & minor number
+Major: xác định driver nào xử lý device đó.
+
+Minor: xác định thiết bị cụ thể (nếu driver quản lý nhiều thiết bị).
+
+Đăng ký bằng register_chrdev_region() hoặc alloc_chrdev_region()
+
+### 2. Cấu trúc file_operations
+Đây là cấu trúc cực kỳ quan trọng, chứa các callback mà kernel gọi khi user-space thao tác với thiết bị:
+
+```
+struct file_operations my_fops = {
+    .owner = THIS_MODULE,
+    .open = my_open,
+    .release = my_release,
+    .read = my_read,
+    .write = my_write,
+    .ioctl = my_ioctl,        // (deprecated, thay bằng unlocked_ioctl)
+    .unlocked_ioctl = my_ioctl,
+};
+```
+Các hàm quan trọng:
+
+`open(): mở thiết bị`
+
+`read(), write(): đọc/ghi dữ liệu`
+
+`release(): đóng thiết bị`
+
+`ioctl(): xử lý lệnh điều khiển đặc biệt`
+
+## QUY TRÌNH XÂY DỰNG MỘT CHARACTER DRIVER CƠ BẢN
+Khởi tạo module:
+
+```
+int init_module(void) {
+    alloc_chrdev_region(&dev, 0, 1, "mychardev");
+    cdev_init(&my_cdev, &my_fops);
+    cdev_add(&my_cdev, dev, 1);
+}
+```
+
+Cleanup module:
+
+```
+void cleanup_module(void) {
+    cdev_del(&my_cdev);
+    unregister_chrdev_region(dev, 1);
+}
+````
+
+## dump_stack() 
+Hàm này cho phép dump tất cả các hàm được gọi.
