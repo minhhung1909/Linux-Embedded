@@ -1,11 +1,11 @@
 # Linux-Embedded
-[1. Build Image](#1.-BUILD-IMAGE)
+[1. Build Image](#1-BUILD-IMAGE)
 
-[5. Shared Memory](#5.-SHARED-MEMORY)
+[5. Shared Memory](#5-SHARED-MEMORY)
 
-[7. Kernel Module](#7.-KERNEL-MODULE)
+[7. Kernel Module](#7-KERNEL-MODULE)
 
-[12. Character Driver](#12.-CHARACTER-DEVICE-DRIVER)
+[12. Character Driver](#12-CHARACTER-DEVICE-DRIVER)
 
 # 1. BUILD IMAGE
 ## Tools chain
