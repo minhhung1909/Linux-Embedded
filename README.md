@@ -311,5 +311,5 @@ Có sử dụng mapping của compatible
 
 `Status` là `enable`
 
-=> Prope được gọi ra.
+=> Prope được gọi ra. Giúp chạy.
 
