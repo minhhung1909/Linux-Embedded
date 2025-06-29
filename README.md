@@ -5,7 +5,9 @@
 
 [7. Kernel Module](#7-KERNEL-MODULE)
 
-[12. Character Driver](#12-CHARACTER-DEVICE-DRIVER)
+[9. Character Driver](#9-CHARACTER-DEVICE-DRIVER)
+
+[10. Device Tree](#10-DEVICE-TREE)
 
 # 1. BUILD IMAGE
 ## Tools chain
@@ -79,7 +81,7 @@ Cùng là lập trình cho 1 chân GPIO có 2 cách
     => Device Driver (Khi dùng Device Driver thì bản chất là gọi Platform Driver)
 
 
-# 12. CHARACTER DEVICE DRIVER
+# 9. CHARACTER DEVICE DRIVER
 - Trong driver của các phần cứng linux thì phải tuân thủ theo đúng format quy định của HĐH.
 
 Vì có quá nhiều device với nhiều đặc điểm khác nhau nên để quán lý được thì cần có cây phân cấp.
@@ -148,3 +150,166 @@ void cleanup_module(void) {
 
 ## dump_stack() 
 Hàm này cho phép dump tất cả các hàm được gọi.
+
+
+
+# 10. DEVICE TREE
+
+Trong hệ thống Embedded Linux, Device Tree (DT) là một cơ chế dùng để mô tả phần cứng cho kernel, giúp tách rời phần mô tả phần cứng khỏi mã nguồn của kernel. Đây là một phần rất quan trọng trong việc port Linux kernel sang các nền tảng nhúng (ARM, RISC-V, v.v.).
+
+Linux không biết được phần cứng là gì mà chỉ biết thông qua Device tree
+
+
+## Tại sao cần Device Tree?
+Trên các hệ thống như x86, phần cứng được phát hiện động (dynamic discovery) thông qua BIOS/UEFI hoặc ACPI. Nhưng trên hệ thống nhúng (như ARM), phần cứng không thể tự mô tả → kernel cần một bản "bản đồ phần cứng" → chính là Device Tree.
+
+## Thành phần chính của Device Tree
+### 1. DTS (Device Tree Source)
+Là file nguồn, dễ đọc.
+
+Phần mở rộng: .dts hoặc .dtsi
+
+### 2. DTB (Device Tree Blob)
+Là file nhị phân đã biên dịch từ .dts.
+
+Kernel sẽ load file .dtb trong lúc khởi động (boot time).
+
+Có 2 dạng file.
+`dtsi:` mô tả general về chip
+`dts:` mô tả specific trên board
+
+## Template và Infomation của Device Tree
+
+### Ví dụ đơn giản về Device Tree
+
+```
+arch/arm/boot/dts/
+├── imx6ull.dtsi           ← cấu hình SoC chung (CPU, bus, clocks...)
+├── imx6ull-14x14-evk.dts  ← board cụ thể (EVK của NXP)
+└── imx6ul-pinfunc.h       ← khai báo pinmux
+```
+
+Trong `imx6ull-14x14-evk.dts:`
+
+```dts
+#include "imx6ull.dtsi"     // Kế thừa cấu hình SoC cơ bản
+
+/ {
+    model = "NXP i.MX6ULL 14x14 EVK Board";
+    compatible = "fsl,imx6ull-14x14-evk", "fsl,imx6ull";
+
+    chosen {
+        bootargs = "console=ttymxc0,115200";
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led1 {
+            gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+            label = "user-led";
+        };
+    };
+};
+```
+
+Trong `imx6ull.dtsi`:
+```
+soc {
+    uart1: serial@02020000 {
+        compatible = "fsl,imx6ul-uart", "fsl,imx21-uart";
+        reg = <0x02020000 0x4000>;
+        interrupts = <0 26 IRQ_TYPE_LEVEL_HIGH>;
+        status = "disabled";
+    };
+
+    gpio1: gpio@0209c000 {
+        compatible = "fsl,imx6ul-gpio", "fsl,imx35-gpio";
+        reg = <0x0209c000 0x4000>;
+        interrupts = <0 66 IRQ_TYPE_LEVEL_HIGH>;
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+};
+```
+`serial@02020000` : `serial` <Tên node> `@` `02020000`<Địa chỉ của node>  
+
+`compatible`: Xác định driver kernel nào sẽ xử lý node này. Là chuỗi string được sử dụng maping node đó với driver điều khiển nó. 
+
+`Address cell` (Địa chỉ bắt đầu ) & `Size cell`(Chiều dài của địa chỉ) là bộ đôi thông tin dùng để quy định fomat cho trường reg. Phần cứng có `32bit` & `64bit` mà kiểu dữ liệu để mô tả địa chỉ cho Device Tree chỉ có `4 byte`.
+
+`reg`: địa chỉ base và kích thước vùng địa chỉ của thiết bị. 
+
+Ví dụ: 
+0x1
+  32 bit 0x1
+  64 bit 0x0 0x1
+
+32 bit 
+  `address-cells`= <0x1>;
+  `size-cells` = <0x1>;
+=> `reg` = <0x44E07000 0x1000>
+
+64 bit 
+  `address-cells`= <0x2>;
+  `size-cells` = <0x2>;
+=> `reg` = <0x0 0x44E07000 0x0 0x1000>
+
+`0x44E07000` Chính là start address của GPIO 0
+
+`interrupts`: số IRQ.
+
+`status`: "okay" để bật thiết bị, "disabled" để tắt.
+
+### Dịch ngược file DTB
+`dtc`: Là là file dịch ngược file dtb. Dùng để kiểm tra file 
+
+```dtc -I dtb -O dts -o output.dts input.dtb```
+
+`-I dtb`: định dạng đầu vào là binary .dtb
+
+`-O dts`: định dạng đầu ra là .dts (text)
+
+`-o output.dts`: file kết quả
+
+`input.dtb`: file nhị phân cần dịch
+
+### Node
+
+Node là một khối định nghĩa phần cứng cụ thể trong cấu trúc cây của Device Tree – giống như một thiết bị (device) hay thành phần phần cứng (CPU, UART, I2C, GPIO, DRAM...).
+
+Mỗi node có thể có:
+
+Tên node (ví dụ: `serial@02020000`)
+
+Label (nhãn) để tham chiếu (ví dụ: `uart1`:)
+
+Thuộc tính (properties): kiểu dữ liệu, thông số kỹ thuật.
+
+Các node con (child nodes): ví dụ, cảm biến gắn trên I2C.
+
+
+
+### Ghi đè file
+
+Dùng file `dts` để ghi đè file `dtsi`. VÌ file `dts` include file `dtsi` nên include `dtsi` vào `dts` rồi viết trong file `dts` tức là ghi đè
+
+### Mở rộng node
+
+Một Node có thể define ở nhiều chỗ. Sau đó khi biên dịch nó sẽ gom lại với nhau. Cũng là ghi đè nhưng mà nội dung đó chưa được define.
+
+## Các mô tả không phổ biến
+
+Ngoài các mô tả phổ biến được định nghĩa trong specìfic còn những trường không phổ biến sẽ nằm ở KERNEL/Documantation/Devicetree/bindings
+
+Ngoài ra có thể difine các trường bất kì nếu muốn chỉ cần tuân theo quy tắc của Device Tree.
+
+## Cách dùng Device
+
+`.probe`: 
+
+Có sử dụng mapping của compatible
+
+`Status` là `enable`
+
+=> Prope được gọi ra.
+
