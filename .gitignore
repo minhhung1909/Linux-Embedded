@@ -1,18 +1,22 @@
-
+.vscode
 gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf.tar.xz
-training_embedded_linux_v3
+debian
 
-S11_I2C/code/*.ko.cmd
-S11_I2C/code/*.mod.cmd
-S11_I2C/code/*.mod.o.cmd
-S11_I2C/code/*.o.cmd
-S11_I2C/code/*.ko
-S11_I2C/code/*.mod
-S11_I2C/code/*.mod.c
-S11_I2C/code/*.mod.o
-S11_I2C/code/*.o
-S11_I2C/code/*.symvers
-S11_I2C/code/*.order
+S11_I2C/code_demo/*.ko.cmd
+S11_I2C/code_demo/*.mod.cmd
+S11_I2C/code_demo/*.mod.o.cmd
+S11_I2C/code_demo/*.o.cmd
+S11_I2C/code_demo/*.ko
+S11_I2C/code_demo/*.mod
+S11_I2C/code_demo/*.mod.c
+S11_I2C/code_demo/*.mod.o
+S11_I2C/code_demo/*.o
+S11_I2C/code_demo/*.symvers
+S11_I2C/code_demo/*.order
+
+S11_I2C/I2C-20250701T020106Z-1-001
+
+
 
 S11_I2C/ssd1306_code/*.ko.cmd
 S11_I2C/ssd1306_code/*.mod.cmd
@@ -25,3 +29,5 @@ S11_I2C/ssd1306_code/*.mod.o
 S11_I2C/ssd1306_code/*.o
 S11_I2C/ssd1306_code/*.symvers
 S11_I2C/ssd1306_code/*.order
+
+training_embedded_linux_v3

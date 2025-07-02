@@ -9,6 +9,8 @@
 
 [10. Device Tree](#10-DEVICE-TREE)
 
+[13. Pin Control](#13-PIN-CONTROL)
+
 # 1. BUILD IMAGE
 ## Tools chain
   Tools chain gồm các thư viện gcc, GDB, ... thư viện glibc
@@ -313,3 +315,51 @@ Có sử dụng mapping của compatible
 
 => Prope được gọi ra. Giúp chạy.
 
+
+# 13. PIN CONTROL
+
+- Pin control là ngoại vi cho phép config chức năng cho các chân. 
+- Pin control còn cho phép Switch giửa các chức năng.
+- Pin control cho phép cấu hình các thông số của pin (pull-up, pull-down, mức điện áp output...).
+- Tất cả các pin đều được `1 ngoại vi` pin control điều khiển.
+
+## Pin-muxing Table
+
+- Là table thể hiện chức năng của pin.
+- Được cung cấp bởi NSX.
+- Nếu không config thì mặc định sẽ là `mode 0`
+
+## Kiến trúc Pin Control trong Linux
+
+![Alt text](S12_PinMuxing/img/architec.png)
+- `Pinctrl Harware`: Là ngoại vi pin control của BBB. 
+- `Pinctrl BBB`: Là Driver để tương tác với `Pinctrl Harware` thông qua thanh ghi của nó. Và chỉ dùng riêng cho BBB thôi. Và Driver này được cung cấp bởi NSX nằm trong SDK.
+- `Pinctrl Core`: là source code của Linux. Còn là core của Framewỏk và cung cấp APIs đến những components khác. 
+-`Pinctrl Base`: Được dùng để cấu hình từ Device tree để đăng kí nó `Pinctrl Core`.
+-`Debugfs`: Cung cấp intèace để debug đến cho User space (Kiểm tra được cấu hình đã được nhận hay chưa và có đang sử dụng trong Device tree hay không).
+
+## Ưu điểm:
+
+- Quản lý được các chân pin.
+- Cho phép 1 chân pin chỉ được cấp hình bởi 1 Driver.
+- Dễ dàng Debug trong quá trình Deverlop
+
+## Khai báo cấu hình trong Device Tree
+
+### Khai báo cấu hình:
+
+![Alt text](S12_PinMuxing/img/khaibaocauhinh.png)
+
+- Là node con của node pin control quản lý nó.
+- Được gán một label để định danh.
+- Với mỗi SoC khác nhau thì việc khai báo cấu hình sẽ khác nhau.
+
+
+### Khai báo chức năng:
+ - Sử dụng khai báo cấu hình để apply khai báo cấu hình vào hệ thống.
+
+![Alt text](S12_PinMuxing/img/khaibaochucnang.png)
+
+- Sử  dụng 2 thuộc tính pinctrl-names và pinctrl-<id>.
+- pinctrl-names sẽ là định danh cho pinctrl-id.
+- pinctrl-<id> sẽ trỏ đến node cấu hình.
