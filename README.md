@@ -9,7 +9,9 @@
 
 [10. Device Tree](#10-DEVICE-TREE)
 
-[13. Pin Control](#13-PIN-CONTROL)
+[12. Pin Control](#12-PIN-CONTROL)
+
+[13. Yocto](#13-YOCTO)
 
 # 1. BUILD IMAGE
 ## Tools chain
@@ -316,7 +318,7 @@ Có sử dụng mapping của compatible
 => Prope được gọi ra. Giúp chạy.
 
 
-# 13. PIN CONTROL
+# 12. PIN CONTROL
 
 - **Pin Control** là ngoại vi cho phép cấu hình chức năng và thông số điện cho các chân pin.
 - Cho phép **chuyển đổi chức năng** của pin (multiplexing).
@@ -461,3 +463,147 @@ cd /sys/kernel/debug/pinctrl/44e10800.pinmux/
 
 - [Linux Pinctrl Subsystem Docs](https://www.kernel.org/doc/html/latest/pinctrl/index.html)
 - [TI AM335x TRM (Technical Reference Manual)](https://www.ti.com/lit/pdf/spruh73)
+
+
+# 13. YOCTO
+# Kiến thức bổ sung về YOCTO Project
+
+## 1. Kiến trúc Yocto chi tiết
+
+### 1.1. Thành phần cốt lõi
+- **BitBake**: Công cụ thực thi task-oriented, tương tự make, quản lý dependencies và thực hiện các công việc theo recipes
+- **OpenEmbedded-Core (OE-Core)**: Lớp metadata cơ bản, chứa recipes, classes và config files cơ bản
+- **Poky**: Reference distribution, tích hợp OE-Core, BitBake và một số layer cơ bản
+
+### 1.2. Layer System
+Layers được tổ chức theo thứ bậc:
+- **meta-poky**: Layer cơ bản cho reference distribution
+- **meta-yocto-bsp**: BSP cho các nền tảng tham khảo
+- **meta-openembedded**: Tập hợp các layer bổ sung
+- **meta-oe**: Layer chung cho Open Embedded
+- **meta-python**: Hỗ trợ Python packages
+- **meta-networking**: Các gói networking
+- **meta-multimedia**: Các gói multimedia
+- **meta-(vendor)**: Layers từ nhà sản xuất phần cứng (TI, NXP, Intel...)
+
+## 2. BitBake - "Động cơ" của Yocto
+
+- **Execution Engine**: Quản lý tasks, dependencies và thực thi
+- **Task Scheduler**: Sắp xếp thứ tự tasks để tối ưu quá trình build
+- **Caching System**: Cache kết quả build để tăng tốc các lần build sau
+- **Fetch System**: Tải source code từ nhiều nguồn khác nhau
+- **Parsing System**: Phân tích cú pháp files để hiểu cách build
+
+## 3. Recipes - Xương sống của hệ thống
+
+```
+# Ví dụ recipe cơ bản (.bb file)
+SUMMARY = "Simple hello world application"
+SECTION = "examples"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
+
+SRC_URI = "file://helloworld.c"
+
+S = "${WORKDIR}"
+
+do_compile() {
+    ${CC} ${LDFLAGS} helloworld.c -o helloworld
+}
+
+do_install() {
+    install -d ${D}${bindir}
+    install -m 0755 helloworld ${D}${bindir}
+}
+```
+
+### 3.1. Loại Recipes
+- **Base recipes**: Recipes cơ bản để build một package
+- **Append files**: Mở rộng/override recipes (`.bbappend`)
+- **Include files**: Chia sẻ code giữa recipes (`.inc`)
+- **Configuration files**: Thiết lập hệ thống (`.conf`)
+- **Classes**: Chia sẻ functionality giữa recipes (`.bbclass`)
+
+## 4. Variables & Tasks cơ bản
+
+### 4.1. Variables quan trọng
+- **S**: Thư mục source code sau khi giải nén
+- **WORKDIR**: Thư mục làm việc cho recipe
+- **D**: Thư mục cài đặt tạm (staging)
+- **MACHINE**: Kiến trúc phần cứng mục tiêu
+- **DISTRO**: Distribution được build
+- **IMAGE_INSTALL**: Danh sách packages để cài đặt
+
+### 4.2. Tasks quan trọng
+- **do_fetch**: Tải source code
+- **do_unpack**: Giải nén source code
+- **do_patch**: Áp dụng patches
+- **do_configure**: Cấu hình source code
+- **do_compile**: Build source code
+- **do_install**: Cài đặt vào staging area
+- **do_package**: Tạo package
+- **do_rootfs**: Tạo rootfs cho image
+
+## 5. Cấu hình hệ thống
+
+### 5.1. Các file cấu hình chính
+- **local.conf**: Cấu hình cho build cụ thể
+- **bblayers.conf**: Xác định layers được sử dụng
+- **machine configurations**: Cấu hình phần cứng
+- **distro configurations**: Cấu hình distribution
+
+### 5.2. Ví dụ cấu hình local.conf
+```
+MACHINE ?= "beaglebone-yocto"
+DISTRO ?= "poky"
+PACKAGE_CLASSES ?= "package_rpm"
+EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
+USER_CLASSES ?= "buildstats image-mklibs image-prelink"
+PATCHRESOLVE = "noop"
+BB_DISKMON_DIRS ??= "\
+    STOPTASKS,${TMPDIR},1G,100K \
+    STOPTASKS,${DL_DIR},1G,100K \
+    STOPTASKS,${SSTATE_DIR},1G,100K \
+    STOPTASKS,/tmp,100M,100K \
+    ABORT,${TMPDIR},100M,1K \
+    ABORT,${DL_DIR},100M,1K \
+    ABORT,${SSTATE_DIR},100M,1K \
+    ABORT,/tmp,10M,1K"
+PACKAGECONFIG_append_pn-qemu-system-native = " sdl"
+CONF_VERSION = "1"
+```
+
+## 6. Package Management Systems
+
+Yocto hỗ trợ nhiều hệ thống quản lý package:
+- **RPM**: Red Hat Package Manager
+- **DEB**: Debian Package
+- **IPK**: Itsy Package (OpenEmbedded)
+
+## 7. Workflow phát triển Yocto
+
+1. **Setup môi trường**: `source oe-init-build-env`
+2. **Cấu hình build**: Chỉnh sửa `local.conf` và `bblayers.conf`
+3. **Tạo recipe mới** (nếu cần): `devtool add <recipe-name> <source-location>`
+4. **Build image**: `bitbake <image-name>` (ví dụ: `core-image-minimal`)
+5. **Deploy image** lên target
+6. **Debug và test**
+7. **Tối ưu image** theo yêu cầu
+
+## 8. Customization techniques
+
+- **Layer priority**: Kiểm soát layer nào override layer nào
+- **DISTRO_FEATURES**: Thêm/bớt các tính năng của distribution
+- **IMAGE_FEATURES**: Thêm/bớt các tính năng của image
+- **MACHINE_FEATURES**: Định nghĩa tính năng phần cứng
+- **PACKAGECONFIG**: Tùy chỉnh build options cho packages
+
+## 9. Best practices
+
+- **Sử dụng layer riêng** cho mỗi customization lớn
+- **Theo dõi sự phụ thuộc**: Dùng `bitbake -g <recipe>` để hiểu dependencies
+- **Sử dụng shared state (sstate)** để tăng tốc build
+- **Tuân thủ Yocto coding style** cho recipes
+- **Tối ưu image size**: Loại bỏ packages không cần thiết
+
+## [10. Ví dụ thực tế: Custom layer cho BeagleBone Black](S13_Yocto/Yocto/Yocto%20for%20BeagleBone%20Black.txt)

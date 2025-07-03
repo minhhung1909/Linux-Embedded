@@ -30,4 +30,7 @@ S11_I2C/ssd1306_code/*.o
 S11_I2C/ssd1306_code/*.symvers
 S11_I2C/ssd1306_code/*.order
 
+S13_Yocto/build_yocto
+S13_Yocto/src
+
 training_embedded_linux_v3
